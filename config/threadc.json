@@ -1,0 +1,125 @@
+{
+ "_README": [
+  "Thread C ticker banking recorder -- production configuration.",
+  "Editing this file is an operational change, not a code change. Every accepted",
+  "change to collection_end_utc is appended to <archive_dir>/config_changes.jsonl.",
+  "",
+  "NO VALUE HERE IS null ANY MORE. Both of the values that were deliberately",
+  "left unsupplied have now been supplied from measurement rather than guessed:",
+  "disk_reserve_bytes from the Branch-2 capacity hour, and the discovery cadence",
+  "from the operational decision recorded below. The recorder still fails closed",
+  "at startup if either is removed."
+ ],
+
+ "archive_dir": "/mnt/threadc",
+
+ "_collection_end_utc": [
+  "The frozen collection end. Initial value derived from MLB's published",
+  "postseason schedule as of 2026-09-03: collection continues through the fifth",
+  "calendar day after the latest published postseason game date.",
+  "This value may be moved LATER by an operator if MLB's published latest",
+  "postseason date moves later. It may NEVER move earlier -- the recorder",
+  "enforces that against <archive_dir>/collection_end.state.json and refuses to",
+  "start if this file asks for an earlier end.",
+  "The recorder does not fetch, parse or monitor the MLB schedule."
+ ],
+ "collection_end_utc": "2026-11-05T12:00:00Z",
+
+ "_disk_reserve_bytes": [
+  "SUPPLIED FROM MEASUREMENT. The production reserve is frozen as",
+  "R = max(10 GiB, 48 x B_1h), where B_1h is the bytes the filesystem consumed",
+  "over one bracketed high-activity hour. THE RUN HAS NOW HAPPENED.",
+  "",
+  "The B_1h used here is the BRANCH-2 measurement -- the ticker-only capacity",
+  "hour, which reported B_1h,disk = 267,526,144 bytes/hour. That is the branch",
+  "this configuration collects on, so it is the branch the reserve is sized",
+  "against. 48 x 267,526,144 = 12,841,254,912, which is above the 10 GiB floor,",
+  "so R = 12841254912.",
+  "",
+  "It is NOT recomputed from any other hour. The Branch-1 hour (ticker+trade,",
+  "373,444,608 bytes/hour) measured a different channel selection and is not",
+  "what runs here; a later, busier or quieter hour is not the measurement the",
+  "formula was frozen against. Changing R means running the bracketed hour",
+  "again and saying which run the new number came from.",
+  "",
+  "10737418240 (10 GiB) is the floor the recorder enforces, not a default."
+ ],
+ "disk_reserve_bytes": 12841254912,
+
+ "_discovery_daily_target_utc": [
+  "RESOLVED. Frozen Rule 1 full-universe discovery runs ONCE PER UTC CALENDAR",
+  "DAY, targeted at this wall-clock UTC time.",
+  "",
+  "Why a daily wall-clock target rather than an interval from process start:",
+  "an interval measured from startup shifts a little on every restart and",
+  "drifts permanently after a few, so a reboot would silently move the cadence.",
+  "Anchoring to a UTC time means a reboot at 03:00 changes nothing.",
+  "",
+  "09:00 UTC is chosen as an operational quiet hour: it is 05:00 ET, after the",
+  "previous evening's MLB games have settled and hours before the earliest",
+  "first pitch, so a ~25-minute, ~13,800-request sweep competes with live",
+  "book traffic as little as the schedule allows. The sweep runs on a worker",
+  "thread and never interrupts recording either way.",
+  "",
+  "If the recorder was down at the target, that day's sweep runs ONCE as soon",
+  "as live recording is restored. The catch-up is inherently today-only: a",
+  "discovery census is a snapshot of what the exchange says now and cannot be",
+  "taken retroactively for a day already past.",
+  "",
+  "Only a COMPLETE census accepts the UTC day. An INCOMPLETE one leaves the day",
+  "unaccepted so it is retried -- the one case where more than one sweep runs",
+  "for a day, and the explicit retry the frozen rule allows.",
+  "",
+  "Not configurable and NOT here: discovery_attempt_min_interval_seconds is",
+  "FROZEN at 3600 in threadc.frozen. No sweep may start within an hour of the",
+  "previous attempt's START, however that attempt ended, enforced against a",
+  "timestamp persisted in <archive_dir>/discovery_schedule.state.json and",
+  "written before the sweep begins -- so Restart=always cannot turn a crash",
+  "mid-sweep into a fresh sweep every RestartSec."
+ ],
+ "discovery_daily_target_utc": "09:00:00",
+
+ "_ws_shards": [
+  "Number of WebSocket connections the universe is deterministically hashed",
+  "across: shard = sha256(ticker)[:16] % ws_shards. Kalshi publishes an error",
+  "code for 'subscription market limit exceeded' (26) but no number for the",
+  "limit, and the recorder will not bisect against the server to find one. Raise",
+  "this if a shard exceeds max_markets_per_shard or if the server ever returns",
+  "code 26; changing it re-partitions the universe and every moved market is",
+  "logged as a shard_change."
+ ],
+ "ws_shards": 1,
+
+ "_channels": [
+  "WHICH CHANNELS PRODUCTION BANKS. This key may only ever name a non-empty",
+  "SUBSET of the frozen pair in threadc.frozen.CHANNELS -- it can subtract,",
+  "never add. Removing the key restores the frozen pair; adding a channel that",
+  "is not in it is refused at startup, because widening what the bank preserves",
+  "changes the fidelity boundary and the storage schema and is a code change.",
+  "",
+  "BRANCH 2 OF THE PRECOMMITTED FALLBACK HIERARCHY: ticker only.",
+  "",
+  "Both branches were measured over the same bracketed hour, the same universe",
+  "and the same storage schema. Branch 1 (ticker+trade) reported",
+  "B_1h,disk = 373,444,608 bytes/hour; Branch 2 (ticker only) reported",
+  "267,526,144 bytes/hour. Branch 1 does not fit the 137 GB free for the",
+  "collection window, so collection proceeds on Branch 2 fidelity.",
+  "",
+  "THIS KEY IS WRITTEN EXPLICITLY RATHER THAN LEFT OUT. Absence means the frozen",
+  "pair, which is Branch 1 -- the branch the measurement rejected. A production",
+  "start with no channels key would therefore silently revert to it.",
+  "",
+  "What this costs is recorded in research/THREADC_FIDELITY_BOUNDARY_V1.md:",
+  "the archive keeps the displayed state at the touch and loses every public",
+  "print. The selection is written into the startup record, the readiness line,",
+  "the ws_session rows and the OPEN and final manifests, so no segment can be",
+  "read later as a two-channel segment in which nothing happened to trade."
+ ],
+ "channels": ["ticker"],
+
+ "_max_markets_per_shard": [
+  "Occupancy above which a shard is reported over capacity. 0 disables the",
+  "check. Reported, never auto-fixed: the recorder does not re-partition itself."
+ ],
+ "max_markets_per_shard": 0
+}

@@ -1,0 +1,97 @@
+{
+ "_README": [
+  "Thread C ONE-HOUR CAPACITY MEASUREMENT configuration. NOT production.",
+  "",
+  "This run exists to measure B_1h -- the bytes the FILESYSTEM consumed during",
+  "one hour of high-activity live evening traffic -- so that the production",
+  "reserve R = max(10 GiB, 48 x B_1h) can be computed by a human and written",
+  "into config/threadc.json.",
+  "",
+  "THE MEASURED HOUR IS BRACKETED, NOT COUNTED FROM PROCESS START. The run does",
+  "its setup, censuses the universe, establishes every subscription and banks",
+  "the explicit initial state FIRST. Only then does it read filesystem usage,",
+  "mark measurement_start, collect for exactly 3,600 seconds, mark",
+  "measurement_end and read filesystem usage again. B_1h,disk is the difference",
+  "between those two readings -- never an extrapolation from a shorter interval",
+  "and never a logical payload-byte counter.",
+  "",
+  "It is kept unmistakably separate from production collection in four ways:",
+  "  * its own archive_dir, so no capacity segment can land beside a production",
+  "    one or be picked up by the daily health check;",
+  "  * mode=capacity stamped into every manifest it writes;",
+  "  * a close_reason of capacity_run_end rather than any production reason;",
+  "  * it is launched by hand with --capacity and is not the systemd unit's",
+  "    ExecStart, so it cannot be restarted into a production window."
+ ],
+
+ "archive_dir": "/mnt/threadc-capacity",
+
+ "_collection_end_utc": [
+  "Ignored in capacity mode -- the run is bounded by its measurement window.",
+  "Present because the config schema requires it; deliberately far in the future",
+  "so it cannot end the measurement early, and in a separate archive_dir so it",
+  "can never be mistaken for the production collection end."
+ ],
+ "collection_end_utc": "2099-01-01T00:00:00Z",
+
+ "_disk_reserve_bytes": [
+  "The 10 GiB FLOOR of the frozen formula R = max(10 GiB, 48 x B_1h), used as",
+  "the safety reserve for this one-hour run only. This is not an estimate of R:",
+  "the 48 x B_1h half cannot be evaluated until this very run produces B_1h, and",
+  "the floor half is stated in the spec and needs no measurement. Production",
+  "must use the computed R, not this."
+ ],
+ "disk_reserve_bytes": 10737418240,
+
+ "_discovery": [
+  "Rule 1 full-universe discovery does NOT run in capacity mode, and there is",
+  "no key here that could switch it on. It is disabled by the run MODE, not by",
+  "configuration: threadc.config.ThreadCConfig.discovery_enabled is false for",
+  "mode=capacity, the discovery loop exits immediately, and",
+  "ThreadCRecorder.run_discovery_once() raises CapacityModeViolation if called",
+  "at all.",
+  "",
+  "Why it must be off. This run is a live-evening measurement and will usually",
+  "start well after the production 09:00 UTC target. With discovery enabled the",
+  "recorder would immediately treat that day's sweep as missed and perform it:",
+  "~25 minutes and ~13,800 authenticated requests, whose REST load, CPU,",
+  "memory and response bodies would land inside the very hour whose bytes, CPU",
+  "and RAM are being measured. B_1h is meant to describe the raw-book write",
+  "path, so the sweep is excluded rather than measured.",
+  "",
+  "The run therefore starts from the verified current append-only universe and",
+  "measures exactly two things: ticker/trade storage throughput, and whether",
+  "that universe can actually be held on the wire (peak simultaneous subscribed",
+  "markets, and whether subscription-limit error code 26 occurred)."
+ ],
+
+ "_channels": [
+  "WHICH CHANNELS THIS MEASUREMENT SUBSCRIBES TO. Capacity-mode only: this key",
+  "is REFUSED in a production configuration and refused if this file is run",
+  "without --capacity, so it cannot change what production banks. It may only",
+  "select a SUBSET of the frozen pair in threadc.frozen.CHANNELS -- it can",
+  "subtract, never add. Removing the key restores the frozen pair.",
+  "",
+  "BRANCH 2 OF THE PRECOMMITTED FALLBACK HIERARCHY: ticker only.",
+  "",
+  "Branch 1 (ticker+trade) was measured over the bracketed hour and reported",
+  "B_1h,disk = 373,444,608 bytes/hour. That is 12.2x the full-window storage",
+  "budget and 4.4x the regular-season-only budget, so Branch 1 does not fit and",
+  "the hierarchy moves to Branch 2.",
+  "",
+  "Branch 2 is MEASURED, not inferred. Trade messages were 5.1% of Branch 1's",
+  "message count, and it would be easy to read that as 'ticker-only saves 5%'.",
+  "A message count is not a disk contribution: the two channels carry different",
+  "payload sizes, compress differently, and the archive's per-frame overhead is",
+  "not proportional to either count. Dropping a channel also changes how the",
+  "remaining frames arrive. So this branch gets its own bracketed 3,600-second",
+  "hour under the same universe, the same initial-state handling and the same",
+  "storage schema, and its B_1h,disk is read off the same two filesystem",
+  "readings. The selection is written into every manifest this run produces and",
+  "into the capacity report, so the two branches can never be confused."
+ ],
+ "channels": ["ticker"],
+
+ "ws_shards": 1,
+ "max_markets_per_shard": 0
+}

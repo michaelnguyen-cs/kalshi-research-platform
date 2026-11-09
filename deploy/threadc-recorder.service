@@ -1,0 +1,55 @@
+[Unit]
+Description=Thread C MLB ticker/trade banking recorder (read-only, no order path)
+Documentation=file:///home/ubuntu/kalshi-bot/research/THREADC_COLLECTION_UNIVERSE_V1.md
+After=network-online.target
+Wants=network-online.target
+# The archive lives on a dedicated block volume. Without this the recorder can
+# start before the mount exists and begin banking onto the boot disk.
+RequiresMountsFor=/mnt/threadc
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/kalshi-bot
+Environment=PATH=/home/ubuntu/kalshi-bot/.venv/bin:/usr/bin:/bin
+Environment=THREADC_CONFIG=/home/ubuntu/kalshi-bot/config/threadc.json
+ExecStart=/home/ubuntu/kalshi-bot/.venv/bin/python /home/ubuntu/kalshi-bot/scripts/threadc_record.py --config /home/ubuntu/kalshi-bot/config/threadc.json
+
+# Unexpected death or reboot restarts automatically; each start is logged to
+# <archive_dir>/process_starts.jsonl so the resulting gap is attributable.
+Restart=always
+RestartSec=5
+
+# The two INTENTIONAL terminal stops must not be restarted:
+#   the low-disk halt      -- restarting would resume writing onto a full disk
+#   the frozen collection end -- restarting would collect past the frozen end
+# Both exit 75. Every other non-zero status is an unexpected failure and does
+# restart.
+RestartPreventExitStatus=75
+
+# No runtime cap: the collection window is months long.
+TimeoutStartSec=0
+# Finalization drains the frame queue, checkpoints the WAL, closes the database,
+# runs an integrity check and hashes the file. It must be allowed to finish, or
+# a stop would manufacture the INCOMPLETE_CRASH it exists to avoid.
+TimeoutStopSec=300
+KillSignal=SIGTERM
+
+# This process is a recorder. It has no order path -- it never constructs a
+# KalshiClient and its HTTP layer is GET-only against a four-path allowlist --
+# and these confine it further at the OS level.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/mnt/threadc /home/ubuntu/kalshi-bot/logs
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+# Do NOT add StandardOutput=append:...  systemd would write that file unbounded,
+# bypassing kbot.log_config's rotation -- which is how logs/ once reached 23 GB.
+# journalctl -u threadc-recorder.service carries stdout.
+
+[Install]
+WantedBy=multi-user.target

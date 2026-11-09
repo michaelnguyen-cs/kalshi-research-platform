@@ -1,0 +1,63 @@
+{
+  "ambiguity": {
+    "ambiguous_adjacent_book_event": 26003,
+    "ambiguous_consumer_backlog_or_warmup": 68012,
+    "ambiguous_no_prior_ticker_to_diff_against": 1456,
+    "ambiguous_other_ticker_field_changed_too": 2424,
+    "consumer_kept_up": true,
+    "consumer_lag": {
+      "max_seconds": 2.063,
+      "messages_with_exchange_timestamp": 610176,
+      "min_seconds": 0.454,
+      "p50_seconds": 0.55,
+      "p99_seconds": 1.5,
+      "spread_p99_minus_min_seconds": 1.046
+    },
+    "match_window_post_seconds": 2.0,
+    "match_window_pre_seconds": 0.25,
+    "sequence_gaps": 0,
+    "ticker_vs_book_touch_price_comparisons": 115766,
+    "ticker_vs_book_touch_price_disagreements": 356,
+    "ticker_vs_book_touch_size_comparisons": 115410,
+    "ticker_vs_book_touch_size_disagreements": 684,
+    "total": 97895
+  },
+  "channels_subscribed": [
+    "orderbook_delta",
+    "ticker"
+  ],
+  "errors": 0,
+  "initial_state_on_subscription": {
+    "markets_with_orderbook_snapshot_in_window": 7607,
+    "markets_with_ticker_message_in_window": 241,
+    "subscribed_markets": 7607,
+    "window_seconds": 10.0
+  },
+  "match_rate": 0.999732,
+  "notes": [
+    "channels acknowledged by the server: orderbook_delta, ticker"
+  ],
+  "observed_seconds": 1510.0,
+  "observed_traffic": {
+    "markets_with_book_events": 3791,
+    "markets_with_ticker_events": 3791,
+    "orderbook_messages": 559220,
+    "ticker_messages": 58563,
+    "top_of_book_transitions": 150056,
+    "trade_messages": 0
+  },
+  "probe": "threadc_ticker_size_only_emission",
+  "qualifying_best_touch_size_only_opportunities": 112826,
+  "reconnects": 0,
+  "subscription_limit_error_26_count": 0,
+  "thresholds": {
+    "confirm_rate": 0.99,
+    "min_unambiguous_opportunities": 100,
+    "refute_rate": 0.95
+  },
+  "ticker_update_present_but_size_not_carried": 0,
+  "unambiguous_opportunities": 14931,
+  "verdict": "TICKER_REFLECTS_SIZE_ONLY_TOUCH_CHANGES",
+  "with_corresponding_ticker_update_carrying_changed_size": 14927,
+  "without_corresponding_ticker_update": 4
+}

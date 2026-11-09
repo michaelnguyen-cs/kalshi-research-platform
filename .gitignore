@@ -1,0 +1,76 @@
+# --- SECRETS / PRIVATE DATA — never commit these ---
+.env*
+*.pem
+*.key
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+service_account*.json
+data/
+
+# --- Runtime artifacts ---
+kbot_heartbeat.json
+logs/
+
+# --- Python build artifacts ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- Testing / coverage ---
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# --- Type checkers / linters ---
+.mypy_cache/
+.ruff_cache/
+
+# --- IDE ---
+.idea/
+.vscode/
+*.swp
+*.swo
+.claude/settings.local.json
+
+# --- Thread A research recorder databases (see research/THREAD_A_RECORDER_ACCEPTANCE_2026-08-22.md) ---
+# Raw WebSocket frame retention makes these multi-GB over a three-day pilot.
+# The frozen data is an archive artifact, not a git object; back it up out of band.
+data/depthrec_*.sqlite
+data/depthrec_*.sqlite-wal
+data/depthrec_*.sqlite-shm
+
+# --- Thread C census probe cache (see research/THREADC_COLLECTION_UNIVERSE_V1.md) ---
+# Resumable per-series /events probe cache. It is a rebuildable accelerator, not
+# evidence: the committed evidence is events_probe.json plus the hashed
+# series_catalog_raw.json.gz snapshot.
+research/threadc_universe_v1/probe_cache.db
+
+# --- Thread C raw-book banking archives (see docs/THREADC_RECORDER_OPERATIONS.md) ---
+# Segment archives are multi-GB per UTC day for the length of the collection
+# window and live on a dedicated volume (config archive_dir, e.g. /mnt/threadc),
+# not in the repository. These patterns only catch a local test or capacity run
+# that was pointed at the working tree by mistake.
+data/threadc/
+threadc-*.sqlite
+threadc-*.sqlite-wal
+threadc-*.sqlite-shm
+
+# --- Public template (names only, empty values) ---
+!.env.example

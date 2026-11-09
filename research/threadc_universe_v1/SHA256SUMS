@@ -1,0 +1,5 @@
+4a4034c66c686891f362c1d613457b61126d7177724054a6163698b8515aca0e  series_catalog_raw.json.gz  (SHA-256 of the UNCOMPRESSED GET /series body)
+6ba2c0be18a3175370eea491bb9d2af1aa6791dff5c195d2640b81f11764d797  series_catalog_raw.json.gz  (as stored, gzipped)
+5aadd7c094e9811cd925658ac64eca0ba5c12ab6562b8d85cc7b8e35fa59cb6f  events_probe.json
+a076b6a674aea966520583f820f27aea9b617acb2e23f829928572e6d28fd93e  universe_v1.json
+5f2039e960b1cd8060f90664afdb693da7e2a51b760625bef90a61ac2ceca752  research/THREADC_COLLECTION_UNIVERSE_V1.md

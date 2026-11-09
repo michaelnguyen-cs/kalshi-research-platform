@@ -1,0 +1,3 @@
+# Byte-exact artifact: the README records a sha256 for every file here.
+# Never let git rewrite line endings, or those hashes stop verifying.
+* -text
